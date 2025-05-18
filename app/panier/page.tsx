@@ -39,6 +39,12 @@ export default function PanierPage() {
     expiry: "",
     cvc: "",
   })
+  const [deliveryCountry, setDeliveryCountry] = useState("senegal")
+  const [deliveryAddress, setDeliveryAddress] = useState("")
+  const [deliveryPhone, setDeliveryPhone] = useState("")
+  const [deliveryInstructions, setDeliveryInstructions] = useState("")
+  const [notificationEmail, setNotificationEmail] = useState("")
+  const [notificationSMS, setNotificationSMS] = useState(false)
 
   // Simuler un temps de chargement
   useEffect(() => {
@@ -66,11 +72,33 @@ export default function PanierPage() {
     }
   }
 
+  // Calculer les frais de livraison en fonction du pays
+  const getShippingCost = () => {
+    if (subtotal > 50) {
+      if (deliveryCountry === "senegal") {
+        return shippingMethod === "express" ? 3000 : 0 // Gratuit pour standard au Sénégal au-dessus de 50€
+      } else if (deliveryCountry === "mali") {
+        return shippingMethod === "express" ? 7500 : 5000
+      } else if (deliveryCountry === "guinee") {
+        return shippingMethod === "express" ? 8000 : 5500
+      }
+    } else {
+      if (deliveryCountry === "senegal") {
+        return shippingMethod === "express" ? 3000 : 1500
+      } else if (deliveryCountry === "mali") {
+        return shippingMethod === "express" ? 7500 : 5000
+      } else if (deliveryCountry === "guinee") {
+        return shippingMethod === "express" ? 8000 : 5500
+      }
+    }
+    return 0
+  }
+
   // Calculer les totaux
   const subtotal = cartTotal
   const discount = promoApplied ? subtotal * 0.2 : 0 // 20% de réduction
-  const shipping = shippingMethod === "express" ? 9.9 : subtotal > 50 ? 0 : 5.9 // Livraison gratuite au-dessus de 50€ pour standard
-  const tax = (subtotal - discount) * 0.2 // TVA 20%
+  const shipping = getShippingCost()
+  const tax = (subtotal - discount) * 0.18 // TVA 18% (taux au Sénégal)
   const total = subtotal - discount + shipping
 
   // Fonction pour passer à l'étape suivante
@@ -95,6 +123,34 @@ export default function PanierPage() {
     }
   }
 
+  // Fonction pour envoyer une demande de livraison spéciale
+  const sendDeliveryRequest = () => {
+    if (!deliveryAddress || !deliveryPhone) {
+      toast({
+        title: "Information manquante",
+        description: "Veuillez remplir l'adresse et le numéro de téléphone pour la livraison.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Simuler l'envoi d'une demande
+    toast({
+      title: "Demande envoyée",
+      description: "Votre demande de livraison spéciale a été envoyée. Vous serez contacté prochainement.",
+    })
+
+    // Dans un cas réel, vous enverriez ces données à votre backend
+    console.log("Demande de livraison spéciale:", {
+      address: deliveryAddress,
+      phone: deliveryPhone,
+      country: deliveryCountry,
+      instructions: deliveryInstructions,
+      notifyEmail: notificationEmail,
+      notifySMS: notificationSMS,
+    })
+  }
+
   // Fonction pour passer la commande
   const handlePlaceOrder = () => {
     setIsProcessing(true)
@@ -112,6 +168,13 @@ export default function PanierPage() {
         total: total,
         items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
         products: [...cartItems],
+        shippingAddress: deliveryAddress || "Adresse par défaut",
+        shippingCountry: deliveryCountry,
+        shippingMethod: shippingMethod,
+        paymentMethod: paymentMethod,
+        customerPhone: deliveryPhone,
+        customerEmail: notificationEmail || user?.email || "",
+        notifySMS: notificationSMS,
       }
 
       // Ajouter la commande à l'historique
@@ -125,6 +188,9 @@ export default function PanierPage() {
         title: "Commande passée avec succès",
         description: `Votre commande #${orderId} a été passée avec succès.`,
       })
+
+      // Dans un cas réel, vous enverriez ces données à votre backend
+      console.log("Nouvelle commande:", newOrder)
 
       // Passer à l'étape de confirmation
       setCheckoutStep("confirmation")
@@ -385,10 +451,10 @@ export default function PanierPage() {
                           )}
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Livraison</span>
-                            <span>{shipping === 0 ? "Gratuite" : `${shipping.toFixed(2)} €`}</span>
+                            <span>{shipping === 0 ? "Gratuite" : `${shipping.toFixed(0)} FCFA`}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">TVA (20%)</span>
+                            <span className="text-muted-foreground">TVA (18%)</span>
                             <span>{tax.toFixed(2)} €</span>
                           </div>
                           <Separator className="my-2" />
@@ -421,38 +487,86 @@ export default function PanierPage() {
 
                       <Card className="mb-6">
                         <CardHeader>
-                          <CardTitle>Adresse de livraison</CardTitle>
-                          <CardDescription>Sélectionnez ou ajoutez une adresse de livraison</CardDescription>
+                          <CardTitle>Pays de livraison</CardTitle>
+                          <CardDescription>Sélectionnez le pays où vous souhaitez être livré</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <RadioGroup defaultValue="home" className="space-y-4">
+                          <RadioGroup
+                            defaultValue="senegal"
+                            value={deliveryCountry}
+                            onValueChange={setDeliveryCountry}
+                            className="space-y-4"
+                          >
                             <div className="flex items-center space-x-2 border rounded-lg p-4">
-                              <RadioGroupItem value="home" id="home" />
-                              <Label htmlFor="home" className="flex-1 cursor-pointer">
+                              <RadioGroupItem value="senegal" id="senegal" />
+                              <Label htmlFor="senegal" className="flex-1 cursor-pointer">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="font-medium">Sénégal</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Livraison disponible dans tout le pays
+                                    </p>
+                                  </div>
+                                  <Badge>Recommandé</Badge>
+                                </div>
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2 border rounded-lg p-4">
+                              <RadioGroupItem value="mali" id="mali" />
+                              <Label htmlFor="mali" className="flex-1 cursor-pointer">
                                 <div>
-                                  <p className="font-medium">Domicile</p>
+                                  <p className="font-medium">Mali</p>
                                   <p className="text-sm text-muted-foreground">
-                                    {user?.address || "123 Avenue des Champs-Élysées, 75008 Paris, France"}
+                                    Livraison disponible dans les grandes villes
                                   </p>
                                 </div>
                               </Label>
-                              <Badge>Par défaut</Badge>
                             </div>
                             <div className="flex items-center space-x-2 border rounded-lg p-4">
-                              <RadioGroupItem value="work" id="work" />
-                              <Label htmlFor="work" className="flex-1 cursor-pointer">
+                              <RadioGroupItem value="guinee" id="guinee" />
+                              <Label htmlFor="guinee" className="flex-1 cursor-pointer">
                                 <div>
-                                  <p className="font-medium">Bureau</p>
+                                  <p className="font-medium">Guinée</p>
                                   <p className="text-sm text-muted-foreground">
-                                    45 Rue du Commerce, 69002 Lyon, France
+                                    Livraison disponible dans les grandes villes
                                   </p>
                                 </div>
                               </Label>
                             </div>
                           </RadioGroup>
-                          <Button variant="outline" className="mt-4">
-                            Ajouter une nouvelle adresse
-                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="mb-6">
+                        <CardHeader>
+                          <CardTitle>Adresse de livraison</CardTitle>
+                          <CardDescription>Entrez votre adresse de livraison complète</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="delivery-address">Adresse complète</Label>
+                              <Textarea
+                                id="delivery-address"
+                                placeholder="Quartier, rue, numéro, points de repère..."
+                                value={deliveryAddress}
+                                onChange={(e) => setDeliveryAddress(e.target.value)}
+                                rows={3}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="delivery-phone">Numéro de téléphone</Label>
+                              <Input
+                                id="delivery-phone"
+                                placeholder="Ex: 77 123 45 67"
+                                value={deliveryPhone}
+                                onChange={(e) => setDeliveryPhone(e.target.value)}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Ce numéro sera utilisé pour vous contacter concernant votre livraison
+                              </p>
+                            </div>
+                          </div>
                         </CardContent>
                       </Card>
 
@@ -474,10 +588,18 @@ export default function PanierPage() {
                                 <div className="flex justify-between items-center">
                                   <div>
                                     <p className="font-medium">Livraison standard</p>
-                                    <p className="text-sm text-muted-foreground">Livraison en 3-5 jours ouvrés</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {deliveryCountry === "senegal"
+                                        ? "Livraison en 2-3 jours ouvrés"
+                                        : "Livraison en 5-7 jours ouvrés"}
+                                    </p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="font-medium">{subtotal > 50 ? "Gratuit" : "5,90 €"}</p>
+                                    <p className="font-medium">
+                                      {deliveryCountry === "senegal" && subtotal > 50
+                                        ? "Gratuit"
+                                        : `${deliveryCountry === "senegal" ? "1 500" : deliveryCountry === "mali" ? "5 000" : "5 500"} FCFA`}
+                                    </p>
                                   </div>
                                 </div>
                               </Label>
@@ -488,10 +610,21 @@ export default function PanierPage() {
                                 <div className="flex justify-between items-center">
                                   <div>
                                     <p className="font-medium">Livraison express</p>
-                                    <p className="text-sm text-muted-foreground">Livraison en 1-2 jours ouvrés</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {deliveryCountry === "senegal"
+                                        ? "Livraison en 24h"
+                                        : "Livraison en 2-3 jours ouvrés"}
+                                    </p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="font-medium">9,90 €</p>
+                                    <p className="font-medium">
+                                      {deliveryCountry === "senegal"
+                                        ? "3 000"
+                                        : deliveryCountry === "mali"
+                                          ? "7 500"
+                                          : "8 000"}{" "}
+                                      FCFA
+                                    </p>
                                   </div>
                                 </div>
                               </Label>
@@ -510,31 +643,36 @@ export default function PanierPage() {
                         <CardContent>
                           <div className="space-y-4">
                             <div className="space-y-2">
-                              <Label htmlFor="delivery-address">Adresse de livraison</Label>
-                              <Input id="delivery-address" placeholder="Entrez l'adresse complète de livraison" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="delivery-phone">Numéro de téléphone</Label>
-                              <Input id="delivery-phone" placeholder="Entrez votre numéro de téléphone" />
-                            </div>
-                            <div className="space-y-2">
                               <Label htmlFor="delivery-instructions">Instructions spéciales</Label>
                               <Textarea
                                 id="delivery-instructions"
                                 placeholder="Précisez vos besoins spécifiques pour la livraison"
                                 rows={3}
+                                value={deliveryInstructions}
+                                onChange={(e) => setDeliveryInstructions(e.target.value)}
                               />
                             </div>
-                            <Button
-                              className="w-full bg-pink-600 hover:bg-pink-700"
-                              onClick={() => {
-                                toast({
-                                  title: "Demande envoyée",
-                                  description:
-                                    "Votre demande de livraison spéciale a été envoyée au gestionnaire du site. Vous serez contacté prochainement.",
-                                })
-                              }}
-                            >
+                            <div className="space-y-2">
+                              <Label htmlFor="notification-email">Email pour les notifications</Label>
+                              <Input
+                                id="notification-email"
+                                type="email"
+                                placeholder="Votre email pour recevoir les mises à jour"
+                                value={notificationEmail}
+                                onChange={(e) => setNotificationEmail(e.target.value)}
+                              />
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                id="notification-sms"
+                                checked={notificationSMS}
+                                onCheckedChange={(checked) => setNotificationSMS(checked as boolean)}
+                              />
+                              <Label htmlFor="notification-sms" className="cursor-pointer">
+                                Recevoir des notifications par SMS
+                              </Label>
+                            </div>
+                            <Button className="w-full bg-pink-600 hover:bg-pink-700" onClick={sendDeliveryRequest}>
                               Envoyer ma demande de livraison
                             </Button>
                           </div>
@@ -546,7 +684,7 @@ export default function PanierPage() {
                           <Checkbox id="gift" />
                           <Label htmlFor="gift" className="flex items-center cursor-pointer">
                             <Gift className="h-4 w-4 mr-2 text-pink-600" />
-                            Ajouter un emballage cadeau (+3,90 €)
+                            Ajouter un emballage cadeau (+1 000 FCFA)
                           </Label>
                         </div>
                       </div>
@@ -567,10 +705,10 @@ export default function PanierPage() {
                           )}
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Livraison</span>
-                            <span>{shipping === 0 ? "Gratuite" : `${shipping.toFixed(2)} €`}</span>
+                            <span>{shipping === 0 ? "Gratuite" : `${shipping.toFixed(0)} FCFA`}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">TVA (20%)</span>
+                            <span className="text-muted-foreground">TVA (18%)</span>
                             <span>{tax.toFixed(2)} €</span>
                           </div>
                           <Separator className="my-2" />
@@ -578,10 +716,19 @@ export default function PanierPage() {
                             <span>Total</span>
                             <span>{total.toFixed(2)} €</span>
                           </div>
-                          <Button className="w-full mt-4 bg-pink-600 hover:bg-pink-700" onClick={goToNextStep}>
+                          <Button
+                            className="w-full mt-4 bg-pink-600 hover:bg-pink-700"
+                            onClick={goToNextStep}
+                            disabled={!deliveryAddress || !deliveryPhone}
+                          >
                             Passer au paiement
                             <ChevronRight className="ml-2 h-4 w-4" />
                           </Button>
+                          {(!deliveryAddress || !deliveryPhone) && (
+                            <p className="text-xs text-red-500 text-center mt-2">
+                              Veuillez remplir l'adresse et le numéro de téléphone pour continuer
+                            </p>
+                          )}
                           <p className="text-xs text-center text-muted-foreground mt-4">
                             En passant votre commande, vous acceptez nos conditions générales de vente.
                           </p>
@@ -607,14 +754,90 @@ export default function PanierPage() {
                           <CardDescription>Choisissez comment vous souhaitez payer</CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Tabs defaultValue="card" onValueChange={setPaymentMethod} value={paymentMethod}>
-                            <TabsList className="grid w-full grid-cols-5">
-                              <TabsTrigger value="card">Carte bancaire</TabsTrigger>
+                          <Tabs defaultValue="wave" onValueChange={setPaymentMethod} value={paymentMethod}>
+                            <TabsList className="grid w-full grid-cols-4">
                               <TabsTrigger value="wave">Wave</TabsTrigger>
                               <TabsTrigger value="orange">Orange Money</TabsTrigger>
-                              <TabsTrigger value="paypal">PayPal</TabsTrigger>
-                              <TabsTrigger value="apple">Apple Pay</TabsTrigger>
+                              <TabsTrigger value="card">Carte bancaire</TabsTrigger>
+                              <TabsTrigger value="cash">Paiement à la livraison</TabsTrigger>
                             </TabsList>
+                            <TabsContent value="wave" className="mt-4">
+                              <div className="text-center py-8 border rounded-lg">
+                                <div className="w-16 h-16 bg-[#1DCBEF] rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <span className="text-white font-bold text-xl">Wave</span>
+                                </div>
+                                <p className="text-muted-foreground mb-4">
+                                  Payez facilement avec votre compte Wave Mobile Money.
+                                </p>
+                                <div className="max-w-xs mx-auto space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="wave-number">Numéro Wave</Label>
+                                    <Input
+                                      id="wave-number"
+                                      placeholder="Entrez votre numéro Wave"
+                                      className="text-center"
+                                    />
+                                  </div>
+                                  <div className="p-4 bg-gray-100 rounded-lg text-center">
+                                    <p className="font-medium">Instructions de paiement:</p>
+                                    <ol className="text-sm text-left list-decimal pl-5 mt-2 space-y-1">
+                                      <li>
+                                        Envoyez le montant de{" "}
+                                        <span className="font-semibold">{total.toFixed(0)} FCFA</span> au numéro{" "}
+                                        <span className="font-semibold">77 123 45 67</span>
+                                      </li>
+                                      <li>
+                                        Utilisez la référence:{" "}
+                                        <span className="font-semibold">CMD-{Date.now().toString().slice(-6)}</span>
+                                      </li>
+                                      <li>Entrez votre numéro Wave ci-dessus pour confirmer</li>
+                                    </ol>
+                                  </div>
+                                  <Button className="w-full bg-[#1DCBEF] hover:bg-[#1ab8d9]">
+                                    Confirmer le paiement Wave
+                                  </Button>
+                                </div>
+                              </div>
+                            </TabsContent>
+
+                            <TabsContent value="orange" className="mt-4">
+                              <div className="text-center py-8 border rounded-lg">
+                                <div className="w-16 h-16 bg-[#FF6600] rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <span className="text-white font-bold text-sm">Orange Money</span>
+                                </div>
+                                <p className="text-muted-foreground mb-4">
+                                  Payez facilement avec votre compte Orange Money.
+                                </p>
+                                <div className="max-w-xs mx-auto space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="orange-number">Numéro Orange Money</Label>
+                                    <Input
+                                      id="orange-number"
+                                      placeholder="Entrez votre numéro Orange Money"
+                                      className="text-center"
+                                    />
+                                  </div>
+                                  <div className="p-4 bg-gray-100 rounded-lg text-center">
+                                    <p className="font-medium">Instructions de paiement:</p>
+                                    <ol className="text-sm text-left list-decimal pl-5 mt-2 space-y-1">
+                                      <li>
+                                        Envoyez le montant de{" "}
+                                        <span className="font-semibold">{total.toFixed(0)} FCFA</span> au numéro{" "}
+                                        <span className="font-semibold">78 123 45 67</span>
+                                      </li>
+                                      <li>
+                                        Utilisez la référence:{" "}
+                                        <span className="font-semibold">CMD-{Date.now().toString().slice(-6)}</span>
+                                      </li>
+                                      <li>Entrez votre numéro Orange Money ci-dessus pour confirmer</li>
+                                    </ol>
+                                  </div>
+                                  <Button className="w-full bg-[#FF6600] hover:bg-[#e65c00]">
+                                    Confirmer le paiement Orange Money
+                                  </Button>
+                                </div>
+                              </div>
+                            </TabsContent>
                             <TabsContent value="card" className="mt-4">
                               <div className="space-y-4">
                                 <div className="space-y-2">
@@ -674,79 +897,30 @@ export default function PanierPage() {
                                 </div>
                               </div>
                             </TabsContent>
-                            <TabsContent value="wave" className="mt-4">
+                            <TabsContent value="cash" className="mt-4">
                               <div className="text-center py-8 border rounded-lg">
-                                <div className="w-16 h-16 bg-[#1DCBEF] rounded-full flex items-center justify-center mx-auto mb-4">
-                                  <span className="text-white font-bold text-xl">Wave</span>
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <Check className="h-8 w-8 text-green-600" />
                                 </div>
+                                <h3 className="text-lg font-medium mb-2">Paiement à la livraison</h3>
                                 <p className="text-muted-foreground mb-4">
-                                  Payez facilement avec votre compte Wave Mobile Money.
+                                  Payez en espèces lors de la réception de votre commande.
                                 </p>
-                                <div className="max-w-xs mx-auto space-y-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="wave-number">Numéro Wave</Label>
-                                    <Input
-                                      id="wave-number"
-                                      placeholder="Entrez votre numéro Wave"
-                                      className="text-center"
-                                    />
-                                  </div>
-                                  <Button className="w-full bg-[#1DCBEF] hover:bg-[#1ab8d9]">Payer avec Wave</Button>
+                                <div className="p-4 bg-gray-100 rounded-lg text-left max-w-md mx-auto">
+                                  <p className="font-medium mb-2">Informations importantes:</p>
+                                  <ul className="text-sm space-y-1 list-disc pl-5">
+                                    <li>
+                                      Préparez le montant exact de{" "}
+                                      <span className="font-semibold">{total.toFixed(0)} FCFA</span>
+                                    </li>
+                                    <li>Vérifiez votre commande avant de payer</li>
+                                    <li>Un reçu vous sera remis après paiement</li>
+                                    <li>Cette option n'est disponible que pour les livraisons au Sénégal</li>
+                                  </ul>
                                 </div>
-                              </div>
-                            </TabsContent>
-
-                            <TabsContent value="orange" className="mt-4">
-                              <div className="text-center py-8 border rounded-lg">
-                                <div className="w-16 h-16 bg-[#FF6600] rounded-full flex items-center justify-center mx-auto mb-4">
-                                  <span className="text-white font-bold text-sm">Orange Money</span>
-                                </div>
-                                <p className="text-muted-foreground mb-4">
-                                  Payez facilement avec votre compte Orange Money.
-                                </p>
-                                <div className="max-w-xs mx-auto space-y-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="orange-number">Numéro Orange Money</Label>
-                                    <Input
-                                      id="orange-number"
-                                      placeholder="Entrez votre numéro Orange Money"
-                                      className="text-center"
-                                    />
-                                  </div>
-                                  <Button className="w-full bg-[#FF6600] hover:bg-[#e65c00]">
-                                    Payer avec Orange Money
-                                  </Button>
-                                </div>
-                              </div>
-                            </TabsContent>
-                            <TabsContent value="paypal" className="mt-4">
-                              <div className="text-center py-8 border rounded-lg">
-                                <Image
-                                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png"
-                                  alt="PayPal"
-                                  width={150}
-                                  height={40}
-                                  className="mx-auto mb-4"
-                                />
-                                <p className="text-muted-foreground mb-4">
-                                  Vous serez redirigé vers PayPal pour finaliser votre paiement.
-                                </p>
-                                <Button className="bg-[#0070ba] hover:bg-[#005ea6]">Payer avec PayPal</Button>
-                              </div>
-                            </TabsContent>
-                            <TabsContent value="apple" className="mt-4">
-                              <div className="text-center py-8 border rounded-lg">
-                                <Image
-                                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Apple_Pay_logo.svg/1200px-Apple_Pay_logo.svg.png"
-                                  alt="Apple Pay"
-                                  width={150}
-                                  height={40}
-                                  className="mx-auto mb-4"
-                                />
-                                <p className="text-muted-foreground mb-4">
-                                  Vous serez redirigé vers Apple Pay pour finaliser votre paiement.
-                                </p>
-                                <Button className="bg-black hover:bg-gray-800">Payer avec Apple Pay</Button>
+                                <Button className="mt-4 bg-green-600 hover:bg-green-700">
+                                  Confirmer le paiement à la livraison
+                                </Button>
                               </div>
                             </TabsContent>
                           </Tabs>
@@ -764,9 +938,16 @@ export default function PanierPage() {
                             <Label htmlFor="same-address">Utiliser la même adresse que pour la livraison</Label>
                           </div>
                           <div className="border rounded-lg p-4 bg-gray-50">
-                            <p className="font-medium">Domicile</p>
+                            <p className="font-medium">Adresse de livraison</p>
                             <p className="text-sm text-muted-foreground">
-                              {user?.address || "123 Avenue des Champs-Élysées, 75008 Paris, France"}
+                              {deliveryAddress || "Adresse non spécifiée"}
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {deliveryCountry === "senegal"
+                                ? "Sénégal"
+                                : deliveryCountry === "mali"
+                                  ? "Mali"
+                                  : "Guinée"}
                             </p>
                           </div>
                         </CardContent>
@@ -788,10 +969,10 @@ export default function PanierPage() {
                           )}
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Livraison</span>
-                            <span>{shipping === 0 ? "Gratuite" : `${shipping.toFixed(2)} €`}</span>
+                            <span>{shipping === 0 ? "Gratuite" : `${shipping.toFixed(0)} FCFA`}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">TVA (20%)</span>
+                            <span className="text-muted-foreground">TVA (18%)</span>
                             <span>{tax.toFixed(2)} €</span>
                           </div>
                           <Separator className="my-2" />
@@ -863,21 +1044,23 @@ export default function PanierPage() {
                               <span>
                                 {paymentMethod === "card"
                                   ? "Carte bancaire"
-                                  : paymentMethod === "paypal"
-                                    ? "PayPal"
-                                    : paymentMethod === "apple"
-                                      ? "Apple Pay"
-                                      : paymentMethod === "wave"
-                                        ? "Wave"
-                                        : "Orange Money"}
+                                  : paymentMethod === "wave"
+                                    ? "Wave"
+                                    : paymentMethod === "orange"
+                                      ? "Orange Money"
+                                      : "Paiement à la livraison"}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="font-medium">Livraison estimée</span>
                               <span>
                                 {shippingMethod === "express"
-                                  ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString()
-                                  : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                  ? deliveryCountry === "senegal"
+                                    ? new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toLocaleDateString()
+                                    : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()
+                                  : deliveryCountry === "senegal"
+                                    ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()
+                                    : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
                               </span>
                             </div>
                           </div>
