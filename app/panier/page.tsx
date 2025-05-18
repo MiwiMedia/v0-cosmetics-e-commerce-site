@@ -500,6 +500,47 @@ export default function PanierPage() {
                         </CardContent>
                       </Card>
 
+                      <Card className="mt-6">
+                        <CardHeader>
+                          <CardTitle>Demande de livraison spéciale</CardTitle>
+                          <CardDescription>
+                            Besoin d'une livraison personnalisée ? Envoyez une demande au gestionnaire du site.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="delivery-address">Adresse de livraison</Label>
+                              <Input id="delivery-address" placeholder="Entrez l'adresse complète de livraison" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="delivery-phone">Numéro de téléphone</Label>
+                              <Input id="delivery-phone" placeholder="Entrez votre numéro de téléphone" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="delivery-instructions">Instructions spéciales</Label>
+                              <Textarea
+                                id="delivery-instructions"
+                                placeholder="Précisez vos besoins spécifiques pour la livraison"
+                                rows={3}
+                              />
+                            </div>
+                            <Button
+                              className="w-full bg-pink-600 hover:bg-pink-700"
+                              onClick={() => {
+                                toast({
+                                  title: "Demande envoyée",
+                                  description:
+                                    "Votre demande de livraison spéciale a été envoyée au gestionnaire du site. Vous serez contacté prochainement.",
+                                })
+                              }}
+                            >
+                              Envoyer ma demande de livraison
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
                       <div className="mt-6">
                         <div className="flex items-center space-x-2">
                           <Checkbox id="gift" />
@@ -567,8 +608,10 @@ export default function PanierPage() {
                         </CardHeader>
                         <CardContent>
                           <Tabs defaultValue="card" onValueChange={setPaymentMethod} value={paymentMethod}>
-                            <TabsList className="grid w-full grid-cols-3">
+                            <TabsList className="grid w-full grid-cols-5">
                               <TabsTrigger value="card">Carte bancaire</TabsTrigger>
+                              <TabsTrigger value="wave">Wave</TabsTrigger>
+                              <TabsTrigger value="orange">Orange Money</TabsTrigger>
                               <TabsTrigger value="paypal">PayPal</TabsTrigger>
                               <TabsTrigger value="apple">Apple Pay</TabsTrigger>
                             </TabsList>
@@ -628,6 +671,51 @@ export default function PanierPage() {
                                     onCheckedChange={(checked) => setSavePaymentInfo(checked as boolean)}
                                   />
                                   <Label htmlFor="save-card">Enregistrer cette carte pour mes prochains achats</Label>
+                                </div>
+                              </div>
+                            </TabsContent>
+                            <TabsContent value="wave" className="mt-4">
+                              <div className="text-center py-8 border rounded-lg">
+                                <div className="w-16 h-16 bg-[#1DCBEF] rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <span className="text-white font-bold text-xl">Wave</span>
+                                </div>
+                                <p className="text-muted-foreground mb-4">
+                                  Payez facilement avec votre compte Wave Mobile Money.
+                                </p>
+                                <div className="max-w-xs mx-auto space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="wave-number">Numéro Wave</Label>
+                                    <Input
+                                      id="wave-number"
+                                      placeholder="Entrez votre numéro Wave"
+                                      className="text-center"
+                                    />
+                                  </div>
+                                  <Button className="w-full bg-[#1DCBEF] hover:bg-[#1ab8d9]">Payer avec Wave</Button>
+                                </div>
+                              </div>
+                            </TabsContent>
+
+                            <TabsContent value="orange" className="mt-4">
+                              <div className="text-center py-8 border rounded-lg">
+                                <div className="w-16 h-16 bg-[#FF6600] rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <span className="text-white font-bold text-sm">Orange Money</span>
+                                </div>
+                                <p className="text-muted-foreground mb-4">
+                                  Payez facilement avec votre compte Orange Money.
+                                </p>
+                                <div className="max-w-xs mx-auto space-y-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="orange-number">Numéro Orange Money</Label>
+                                    <Input
+                                      id="orange-number"
+                                      placeholder="Entrez votre numéro Orange Money"
+                                      className="text-center"
+                                    />
+                                  </div>
+                                  <Button className="w-full bg-[#FF6600] hover:bg-[#e65c00]">
+                                    Payer avec Orange Money
+                                  </Button>
                                 </div>
                               </div>
                             </TabsContent>
@@ -777,7 +865,11 @@ export default function PanierPage() {
                                   ? "Carte bancaire"
                                   : paymentMethod === "paypal"
                                     ? "PayPal"
-                                    : "Apple Pay"}
+                                    : paymentMethod === "apple"
+                                      ? "Apple Pay"
+                                      : paymentMethod === "wave"
+                                        ? "Wave"
+                                        : "Orange Money"}
                               </span>
                             </div>
                             <div className="flex justify-between">

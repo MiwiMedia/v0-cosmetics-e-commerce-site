@@ -6,13 +6,15 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
-import { ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { ArrowLeft, Eye, EyeOff, User } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/context/auth-context"
+import { toast } from "@/components/ui/use-toast"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -41,6 +43,20 @@ export default function LoginPage() {
       }
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleGuestAccess = () => {
+    toast({
+      title: "Mode invité activé",
+      description: "Vous naviguez en tant qu'invité. Certaines fonctionnalités peuvent être limitées.",
+    })
+
+    // Rediriger vers la page d'origine ou la page d'accueil
+    if (redirect && redirect !== "/compte") {
+      router.push(redirect)
+    } else {
+      router.push("/")
     }
   }
 
@@ -129,14 +145,25 @@ export default function LoginPage() {
                     {isSubmitting ? "Connexion en cours..." : "Se connecter"}
                   </Button>
                 </form>
+
+                <Separator className="my-4" />
+
+                <div className="space-y-4">
+                  <Button
+                    variant="outline"
+                    className="w-full border-pink-200 hover:bg-pink-50 hover:text-pink-600"
+                    onClick={handleGuestAccess}
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Continuer en tant qu'invité
+                  </Button>
+
+                  <Button className="w-full bg-pink-600 hover:bg-pink-700" asChild>
+                    <Link href="/register">Créer un compte</Link>
+                  </Button>
+                </div>
               </CardContent>
               <CardFooter className="flex flex-col items-center gap-2">
-                <div className="text-sm text-muted-foreground">
-                  Pas encore de compte?{" "}
-                  <Link href="/register" className="text-pink-600 hover:underline">
-                    S'inscrire
-                  </Link>
-                </div>
                 <div className="text-xs text-muted-foreground">
                   En vous connectant, vous acceptez nos conditions générales d'utilisation.
                 </div>

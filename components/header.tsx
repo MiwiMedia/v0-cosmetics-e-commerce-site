@@ -110,6 +110,7 @@ export function Header() {
             </TooltipProvider>
           </Link>
 
+          {/* Bouton Compte */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -130,7 +131,7 @@ export function Header() {
                 </Link>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{isAuthenticated ? "Mon compte" : "Connexion"}</p>
+                <p>{isAuthenticated ? "Mon compte" : "Connexion / Inscription"}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

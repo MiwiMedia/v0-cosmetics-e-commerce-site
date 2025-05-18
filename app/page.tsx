@@ -96,11 +96,15 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button className="bg-pink-600 hover:bg-pink-700">
-                    Acheter maintenant
-                    <ChevronRight className="ml-2 h-4 w-4" />
+                  <Button className="bg-pink-600 hover:bg-pink-700" asChild>
+                    <Link href="/register">
+                      Créer un compte
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
-                  <Button variant="outline">En savoir plus</Button>
+                  <Button variant="outline" asChild>
+                    <Link href="#nouveautes">Découvrir nos produits</Link>
+                  </Button>
                 </div>
               </div>
               <div className="mx-auto w-full max-w-[500px] lg:max-w-none">

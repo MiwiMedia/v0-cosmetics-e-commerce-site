@@ -11,6 +11,7 @@ export type User = {
   email: string
   phone?: string
   address?: string
+  isGuest?: boolean
 }
 
 type AuthContextType = {
@@ -21,6 +22,7 @@ type AuthContextType = {
   register: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => void
   updateUserProfile: (userData: Partial<User>) => void
+  continueAsGuest: () => void
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -31,6 +33,7 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => false,
   logout: () => {},
   updateUserProfile: () => {},
+  continueAsGuest: () => {},
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -58,9 +61,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const storedUser = localStorage.getItem("user")
         const storedToken = localStorage.getItem("token")
+        const storedGuestUser = localStorage.getItem("guestUser")
 
         if (storedUser && storedToken) {
           setUser(JSON.parse(storedUser))
+        } else if (storedGuestUser) {
+          setUser(JSON.parse(storedGuestUser))
         }
       } catch (error) {
         console.error("Erreur lors de la vérification de l'authentification:", error)
@@ -184,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     localStorage.removeItem("user")
     localStorage.removeItem("token")
+    localStorage.removeItem("guestUser")
     setUser(null)
     router.push("/")
     toast({
@@ -212,6 +219,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  // Fonction pour continuer en tant qu'invité
+  const continueAsGuest = () => {
+    // Créer un utilisateur invité temporaire
+    const guestUser = {
+      id: `guest-${Date.now()}`,
+      name: "Invité",
+      email: "guest@example.com",
+      isGuest: true,
+    }
+
+    // Stocker l'utilisateur invité dans le localStorage
+    localStorage.setItem("guestUser", JSON.stringify(guestUser))
+
+    // Ne pas définir de token pour les invités
+
+    // Mettre à jour l'état
+    setUser(guestUser)
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -222,6 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         updateUserProfile,
+        continueAsGuest,
       }}
     >
       {children}
